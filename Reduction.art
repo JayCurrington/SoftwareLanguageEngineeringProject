@@ -1,5 +1,5 @@
 (* Reduction.art - project starter *)
-
+!traceLevel 2
 !configuration -> _sig::__map
 
 (* Term rewrite rules *)
@@ -11,64 +11,126 @@
 -sequenceDone                    --- seq(__done, _C),_sig -> _C,_sig
 -sequence _C1,_sig -> _C1P,_sigP --- seq(_C1,_C2),_sig -> seq(_C1P,_C2),_sigP
 
+-strSeqDone _A|>__string(_) --- strSeq(_A),_sig -> _A,_sig
+
+-strSeq _A|>__string(_) --- strSeq(_A, strSeq(_B,_C)),_sig -> strSeq(__suff(_A,_B),_C),_sig
+
+
 -ifTrue                        --- if(true,_C1,_C2),_sig -> _C1,_sig
 -ifFalse                       --- if(false,_C1,_C2),_sig -> _C2,_sig
 -ifResolve _E,_sig ->_EP,_sigP --- if(_E,_C1,_C2),_sig -> if(_EP,_C1,_C2),_sigP
 
 -while --- while(_E,_C),_sig -> if(_E,seq(_C,while(_E,_C)),__done),_sig
 
+
 -gt  _n1 |> __int32(_)  _n2 |> __int32(_)     --- gt(_n1,_n2),_sig  ->  __gt(_n1,_n2),_sig 
 -gtR _n |> __int32(_)  _E2,_sig -> _I2,_sigP  --- gt(_n,_E2),_sig   -> gt(_n,_I2),_sigP
 -gtL _E1,_sig -> _I1,_sigP                    --- gt(_E1,_E2),_sig  -> gt(_I1,_E2),_sigP
 
+-lt  _n1 |> __int32(_)  _n2 |> __int32(_)     --- lt(_n1,_n2),_sig  ->  __lt(_n1,_n2),_sig 
+-ltR _n |> __int32(_)  _E2,_sig -> _I2,_sigP  --- lt(_n,_E2),_sig   -> lt(_n,_I2),_sigP
+-ltL _E1,_sig -> _I1,_sigP                    --- lt(_E1,_E2),_sig  -> lt(_I1,_E2),_sigP
+
 -ne  _n1 |> __int32(_) _n2 |> __int32(_)      --- ne(_n1,_n2),_sig  -> __ne(_n1,_n2),_sig
 -neR _n |> __int32(_)  _E2,_sig -> _I2,_sigP  --- ne(_n,_E2) ,_sig  -> ne(_n,_I2),_sigP
 -neL _E1,_sig -> _I1,_sigP                    --- ne(_E1,_E2),_sig  -> ne(_I1,_E2),_sigP
+
+-eq  _n1 |> __int32(_) _n2 |> __int32(_)      --- eq(_n1,_n2),_sig  -> __eq(_n1,_n2),_sig
+-eqR _n |> __int32(_)  _E2,_sig -> _I2,_sigP  --- eq(_n,_E2) ,_sig  -> eq(_n,_I2),_sigP
+-eqL _E1,_sig -> _I1,_sigP                    --- eq(_E1,_E2),_sig  -> eq(_I1,_E2),_sigP
+
+-ge  _n1 |> __int32(_)  _n2 |> __int32(_)     --- ge(_n1,_n2),_sig  ->  __ge(_n1,_n2),_sig 
+-geR _n |> __int32(_)  _E2,_sig -> _I2,_sigP  --- ge(_n,_E2),_sig   -> ge(_n,_I2),_sigP
+-geL _E1,_sig -> _I1,_sigP                    --- ge(_E1,_E2),_sig  -> ge(_I1,_E2),_sigP
+
+-le  _n1 |> __int32(_)  _n2 |> __int32(_)     --- le(_n1,_n2),_sig  ->  __le(_n1,_n2),_sig 
+-leR _n |> __int32(_)  _E2,_sig -> _I2,_sigP  --- le(_n,_E2),_sig   -> le(_n,_I2),_sigP
+-leL _E1,_sig -> _I1,_sigP                    --- le(_E1,_E2),_sig  -> le(_I1,_E2),_sigP
+
+
+
+
+
 
 -sub  _n1 |> __int32(_) _n2 |> __int32(_)     --- sub(_n1,_n2),_sig -> __sub(_n1,_n2),_sig
 -subR _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- sub(_n,_E2),_sig  -> sub(_n,_I2),_sigP
 -subL _E1,_sig -> _I1,_sigP                   --- sub(_E1,_E2),_sig -> sub(_I1,_E2),_sigP
 
 -add  _n1 |> __int32(_) _n2 |> __int32(_)     --- add(_n1,_n2),_sig -> __add(_n1,_n2),_sig
--add _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- add(_n,_E2),_sig  -> add(_n,_I2),_sigP
--add _E1,_sig -> _I1,_sigP                   --- add(_E1,_E2),_sig -> add(_I1,_E2),_sigP
+-addR _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- add(_n,_E2),_sig  -> add(_n,_I2),_sigP
+-addL _E1,_sig -> _I1,_sigP                   --- add(_E1,_E2),_sig -> add(_I1,_E2),_sigP
+
+-mul  _n1 |> __int32(_) _n2 |> __int32(_)     --- mul(_n1,_n2),_sig -> __mul(_n1,_n2),_sig
+-mulR _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- mul(_n,_E2),_sig  -> mul(_n,_I2),_sigP
+-mulL _E1,_sig -> _I1,_sigP                   --- mul(_E1,_E2),_sig -> mul(_I1,_E2),_sigP
+
+-div  _n1 |> __int32(_) _n2 |> __int32(_)     --- div(_n1,_n2),_sig -> __div(_n1,_n2),_sig
+-divR _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- div(_n,_E2),_sig  -> div(_n,_I2),_sigP
+-divL _E1,_sig -> _I1,_sigP                   --- div(_E1,_E2),_sig -> div(_I1,_E2),_sigP
+
+-mod  _n1 |> __int32(_) _n2 |> __int32(_)     --- mod(_n1,_n2),_sig -> __mod(_n1,_n2),_sig
+-modR _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- mod(_n,_E2),_sig  -> mod(_n,_I2),_sigP
+-modL _E1,_sig -> _I1,_sigP                   --- mod(_E1,_E2),_sig -> mod(_I1,_E2),_sigP
+
+-exp  _n1 |> __int32(_) _n2 |> __int32(_)     --- exp(_n1,_n2),_sig -> __exp(_n1,_n2),_sig
+-expR _n |> __int32(_) _E2,_sig -> _I2,_sigP  --- exp(_n,_E2),_sig  -> exp(_n,_I2),_sigP
+-expL _E1,_sig -> _I1,_sigP                   --- exp(_E1,_E2),_sig -> exp(_I1,_E2),_sigP
 
 -plugin --- plugin(_O),_sig -> __plugin(_O),_sig
 -plugin --- plugin(_O, _X),_sig -> __plugin(_O, _X),_sig
 -plugin --- plugin(_O, _X, _Y),_sig -> __plugin(_O, _X, _Y),_sig
 -plugin --- plugin(_O, _X, _Y, _Z),_sig -> __plugin(_O, _X, _Y, _Z),_sig
 
--play   --- play(_A, _B, _C),_sig -> __plugin("play", _A, _B, _C),_sig
+-play   --- play(_A),_sig -> __plugin("play", _A),_sig
+
+
+-bpm _A |> _int32(_) --- bpm(_A),_sig -> __plugin("bpm",_A),_sig
 
 (*  CFG rules *)
 seq ::= statement^^ | statement seq 
-statement ::= assign^^ | while^^ | if^^ | plugin^^ ';'^ | play^^ ';'^
+statement ::= assign^^ | while^^ | if^^ | plugin^^ ';'^ | play^^ ';'^ | bpm^^ ';'^
 assign ::= &ID ':='^ expression ';'^
 while ::= 'while'^ expression 'do'^ statement
 if ::= 'if'^ expression 'then'^ statement | 'if'^ expression 'then'^ statement 'else'^ statement
 plugin ::= 'plugin'^ '('^ expressions^ ')'^  
-play ::= 'play'^ __string ','^ __string ','^ __string
+play ::= 'play'^ strSeq 
+bpm ::= 'bpm'^ __int32
 expressions ::= expression | expression ','^ expressions^
 expression ::= rels^^
-rels ::= adds^^ | gt^^ | ne^^
+rels ::= adds^^ | gt^^ | lt^^ | eq^^ | ne^^ | ge^^ | le^^
   gt ::= adds '>'^ adds
+  lt ::= adds '<'^ adds
+  eq ::= adds '='^ adds
   ne ::= adds '!='^ adds 
-adds  ::= operand^^ | sub^^ | add^^
+  ge ::= adds '>='^ adds
+  le ::= adds '<='^ adds
+adds  ::= operand^^ | add^^ | sub^^ | mul^^ | div^^ | mod^^ | exp^^
   add ::= adds '+'^ operand
   sub ::= adds '-'^ operand
-operand ::= __real64^^ | deref^^ | __string^^ | plugin^^
+  mul ::= adds '*'^ operand
+  div ::= adds '/'^ operand
+  mod ::= adds '%'^ operand
+  exp ::= adds '^'^ operand
+operand ::= __real64^^ | deref^^ | __string^^ | plugin^^ | __int32^^
 __real64 ::= &REAL
 deref   ::= &ID
 __string::= &STRING_SQ
+__int32 ::= &INTEGER
+
+//alows to play as many chords as they want in a row
+strSeq ::= __string^^ | __string ','^ strSeq
 
 (* GCD examples *)
-//!try seq(assign(a,6), seq(assign(b,9), while(ne(deref(a), deref(b)), if(gt(deref(a), deref(b)), assign(a, sub(deref(a), deref(b))), assign(b, sub(deref(b), deref(a))))))), __map
-//!try "a := 6; b := 9; while a != b do if a > b then a := a - b; else b := b - a;"
+!try seq(assign(a,6), seq(assign(b,9), while(ne(deref(a), deref(b)), if(gt(deref(a), deref(b)), assign(a, sub(deref(a), deref(b))), assign(b, sub(deref(b), deref(a))))))), __map
+!try "a := 6; b := 9; while a != b do if a > b then a := a - b; else b := b - a;"
 
 (* Plugin test *)
-!try "plugin('init');"
-!try "plugin('init'); plugin('play', 'B', 'A', 'D');"
+//!try "plugin('init');"
+//!try "plugin('init'); plugin('play', 'B', 'A', 'D');"
+
 !try "plugin('init'); play 'B', 'A', 'D';"
+
+//!try "plugin('init'); play 'B', 'A', 'D'; bpm 300; play 'B', 'A', 'D'; play 'c', 'A', 'G';"
  
 //!try "plugin('weird', 666); "
  

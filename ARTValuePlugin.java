@@ -7,6 +7,8 @@
  *
 */
 
+import java.util.ArrayList;
+
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Synthesizer;
@@ -14,10 +16,11 @@ import javax.sound.midi.Synthesizer;
 import uk.ac.rhul.cs.csle.art.term.AbstractValuePlugin;
 import uk.ac.rhul.cs.csle.art.util.Util;
 
+
 public class ARTValuePlugin extends AbstractValuePlugin {
   @Override
   public String description() {
-    return "Adrian's example music plugin";
+    return "Part A project submission";
   }
 
   @Override
@@ -28,9 +31,19 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       break;
 
     case "play":
-      for (int i = 1; i < args.length; i++)
-        playChord((String) args[i], Chord.MINOR7);
+      for (int i = 1; i < args.length; i++){
+        String argsHold = (String) args[i];
+        for (int j=0; j<argsHold.length(); j++)
+          playChord(argsHold.charAt(j), Chord.MINOR7);
+      }
       break;
+
+    case "bpm":
+      setBpm(Integer.parseInt((String)args[1]));
+      System.out.println("BPM is "+ getBpm());
+      break;
+    
+    
 
     default:
       Util.fatal("Unknown plugin operation: " + args[0]);
