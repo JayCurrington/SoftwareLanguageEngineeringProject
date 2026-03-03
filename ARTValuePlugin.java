@@ -18,6 +18,8 @@ import uk.ac.rhul.cs.csle.art.util.Util;
 
 
 public class ARTValuePlugin extends AbstractValuePlugin {
+
+
   @Override
   public String description() {
     return "Part A project submission";
@@ -31,18 +33,83 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       break;
 
     case "play":
+      channels[0].noteOn(72,60);
       for (int i = 1; i < args.length; i++){
-        String argsHold = (String) args[i];
-        for (int j=0; j<argsHold.length(); j++)
-          playChord(argsHold.charAt(j), Chord.MINOR7);
+        playChord((String) args[i], Chord.MINOR7);
+        
+        
+        
+        //String argsHold = (String)args[i];
+        //for (int j=0; j<argsHold.length(); j++){
+        //  System.out.println("Next Note is "+ argsHold.charAt(j));
+        //  playChord(argsHold.charAt(j), Chord.MINOR7);
+        //}
+          
+
+        
       }
       break;
 
     case "bpm":
-      setBpm(Integer.parseInt((String)args[1]));
+      setBpm((int)args[1]);
       System.out.println("BPM is "+ getBpm());
       break;
+
+    case "octave":
+      setDefaultOctave((int)args[1]);
+      break;
+
+    case "instrument":
+      System.out.println(args[1]);
+      int instNum;
+      switch ((String)args[1]){
+        case "piano":
+          instNum = 2;
+          break;
+
+        case "guitar":
+          instNum = 25;
+          break;
+
+        case "elecGuitar":
+          instNum = 28;
+          break;
+
+        case "drums":
+          instNum = 118;
+          break;
+
+        case "bass":
+          instNum = 34;
+          break;
+
+        case "trumpet":
+          instNum = 57;
+          break;
+
+        case "ocarina":
+          instNum = 80;
+          break;
+
+        case "violin":
+          instNum = 41;
+          break;
+        default:
+          instNum = 1;
+        
+      }
+      channels[currentChannel].programChange(instNum);
+      break;
+
     
+    case "prepare":
+
+
+      break;
+
+    case "channelChange":
+      currentChannel = (int)args[1];
+      break;
     
 
     default:
@@ -63,6 +130,13 @@ public class ARTValuePlugin extends AbstractValuePlugin {
   private double beatRatio = 0.9;
   private int beatSoundDelay = (int) (1000.0 * beatRatio / bps);
   private int beatSilenceDelay = (int) (1000.0 * (1.0 - beatRatio) / bps);
+
+
+  //channels 1-4
+  
+  ArrayList[] channelNotes = {new ArrayList<String>(), new ArrayList<String>(), new ArrayList<String>(), new ArrayList<String>()};
+  private int currentChannel = 1;
+
 
   void initialise() {
     try {
@@ -155,7 +229,7 @@ public class ARTValuePlugin extends AbstractValuePlugin {
   // Single notes
   void play(int k) {
     try {
-      channels[0].noteOn(k, defaultVelocity);
+      channels[currentChannel].noteOn(k, defaultVelocity);
       Thread.sleep(beatSoundDelay);
       channels[0].noteOn(k, 0);
       Thread.sleep(beatSilenceDelay);
@@ -175,10 +249,10 @@ public class ARTValuePlugin extends AbstractValuePlugin {
   void play(int[] k) {
     try {
       for (int i = 0; i < k.length; i++)
-        channels[1].noteOn(k[i], defaultVelocity);
+        channels[currentChannel].noteOn(k[i], defaultVelocity);
       Thread.sleep(beatSoundDelay);
       for (int i = 0; i < k.length; i++)
-        channels[1].noteOn(k[i], 0);
+        channels[currentChannel].noteOn(k[i], 0);
       Thread.sleep(beatSilenceDelay);
     } catch (InterruptedException e) {
       /* ignore interruptedException */ }

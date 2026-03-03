@@ -1,5 +1,5 @@
 (* Reduction.art - project starter *)
-!traceLevel 2
+!traceLevel 5
 !configuration -> _sig::__map
 
 (* Term rewrite rules *)
@@ -11,9 +11,19 @@
 -sequenceDone                    --- seq(__done, _C),_sig -> _C,_sig
 -sequence _C1,_sig -> _C1P,_sigP --- seq(_C1,_C2),_sig -> seq(_C1P,_C2),_sigP
 
--strSeqDone _A|>__string(_) --- strSeq(_A),_sig -> _A,_sig
+//-strSeqDone _A|>__string(_) --- strSeq(_A),_sig -> _A,_sig
+//-strSeq _A|>__string(_) _B|>__string(_) _C|> strSeq(_) --- strSeq(_A, strSeq(_B,_C)),_sig -> strSeq(__cat(_A,_B),_C),_sig
+//-strSeq _A|>__string(_) _B|>__string(_)  --- strSeq(_A, _B),_sig -> strSeq(__cat(_A,_B)),_sig
 
--strSeq _A|>__string(_) --- strSeq(_A, strSeq(_B,_C)),_sig -> strSeq(__suff(_A,_B),_C),_sig
+
+
+
+
+-strSequence  _C|> strSeq(_)       --- strSeq(_A, strSeq(_B,_C)),_sig -> strSeq(__cat(_A,_B),_C),_sig
+-strSequence                      --- strSeq(_A, _B),_sig -> strSeq(__cat(_A,_B)),_sig
+-strSequenceDone                   --- strSeq(_A),_sig -> _A,_sig
+
+
 
 
 -ifTrue                        --- if(true,_C1,_C2),_sig -> _C1,_sig
@@ -81,19 +91,31 @@
 -plugin --- plugin(_O, _X, _Y),_sig -> __plugin(_O, _X, _Y),_sig
 -plugin --- plugin(_O, _X, _Y, _Z),_sig -> __plugin(_O, _X, _Y, _Z),_sig
 
--play   --- play(_A),_sig -> __plugin("play", _A),_sig
+-play   --- play(_A,_B,_C),_sig -> __plugin("play", _A, _B, _C),_sig
 
 
--bpm _A |> _int32(_) --- bpm(_A),_sig -> __plugin("bpm",_A),_sig
+//-play   --- play(_A),_sig -> __plugin("play", _A),_sig
+
+-bpm _A |> __int32(_) --- bpm(_A),_sig -> __plugin("bpm",_A),_sig
+
+-instrument _A |> __string(_) --- instrument(_A),_sig -> __plugin("instrument",_A),_sig
+
 
 (*  CFG rules *)
-seq ::= statement^^ | statement seq 
-statement ::= assign^^ | while^^ | if^^ | plugin^^ ';'^ | play^^ ';'^ | bpm^^ ';'^
+
+seq ::= statement^^ | statement seq
+
+statement ::= assign^^ | while^^ | if^^ | plugin^^ ';'^ | play^^ ';'^ | bpm^^ ';'^ | instrument^^ ';'^
 assign ::= &ID ':='^ expression ';'^
 while ::= 'while'^ expression 'do'^ statement
 if ::= 'if'^ expression 'then'^ statement | 'if'^ expression 'then'^ statement 'else'^ statement
 plugin ::= 'plugin'^ '('^ expressions^ ')'^  
-play ::= 'play'^ strSeq 
+play ::= 'play'^ __string ','^ __string ','^ __string
+
+//play ::= 'play'^ strSeq
+
+instrument ::= 'instrument'^ __string
+
 bpm ::= 'bpm'^ __int32
 expressions ::= expression | expression ','^ expressions^
 expression ::= rels^^
@@ -117,18 +139,20 @@ deref   ::= &ID
 __string::= &STRING_SQ
 __int32 ::= &INTEGER
 
-//alows to play as many chords as they want in a row
-strSeq ::= __string^^ | __string ','^ strSeq
+strSeq ::= operand^^ | operand ','^ strSeq
 
 (* GCD examples *)
-!try seq(assign(a,6), seq(assign(b,9), while(ne(deref(a), deref(b)), if(gt(deref(a), deref(b)), assign(a, sub(deref(a), deref(b))), assign(b, sub(deref(b), deref(a))))))), __map
-!try "a := 6; b := 9; while a != b do if a > b then a := a - b; else b := b - a;"
+//!try seq(assign(a,6), seq(assign(b,9), while(ne(deref(a), deref(b)), if(gt(deref(a), deref(b)), assign(a, sub(deref(a), deref(b))), assign(b, sub(deref(b), deref(a))))))), __map
+//!try "a := 6; b := 9; while a != b do if a > b then a := a - b; else b := b - a;"
 
 (* Plugin test *)
 //!try "plugin('init');"
-//!try "plugin('init'); plugin('play', 'B', 'A', 'D');"
 
-!try "plugin('init'); play 'B', 'A', 'D';"
+//!try "plugin('init'); plugin('play', 'A', 'D', 'B');"
+
+!try "plugin('init'); bpm 100; instrument 'guitar'; play 'C', 'C', 'C'; instrument 'piano'; play 'C', 'C', 'C';"
+
+
 
 //!try "plugin('init'); play 'B', 'A', 'D'; bpm 300; play 'B', 'A', 'D'; play 'c', 'A', 'G';"
  
