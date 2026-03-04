@@ -19,13 +19,6 @@
 
 
 
--strSequence  _C|> strSeq(_)       --- strSeq(_A, strSeq(_B,_C)),_sig -> strSeq(__cat(_A,_B),_C),_sig
--strSequence                      --- strSeq(_A, _B),_sig -> strSeq(__cat(_A,_B)),_sig
--strSequenceDone                   --- strSeq(_A),_sig -> _A,_sig
-
-
-
-
 -ifTrue                        --- if(true,_C1,_C2),_sig -> _C1,_sig
 -ifFalse                       --- if(false,_C1,_C2),_sig -> _C2,_sig
 -ifResolve _E,_sig ->_EP,_sigP --- if(_E,_C1,_C2),_sig -> if(_EP,_C1,_C2),_sigP
@@ -93,10 +86,30 @@
 
 -play   --- play(_A,_B,_C),_sig -> __plugin("play", _A, _B, _C),_sig
 
+-cat      --- cat(_n1,_n2),_sig -> __cat(_n1,_n2),_sig
 
-//-play   --- play(_A),_sig -> __plugin("play", _A),_sig
+
+-setSeq  _S|>__string(_) --- setSeq(_S),_sig -> __plugin("setSeq", _S),_sig
+
+-setSeq  _S|> strSeq(_A,_B) _A|> __string(_) _B|> strSeq(_L,_R) --- setSeq(_S),_sig -> setSeq(strSeq(__cat(_A,_L),_R)),_sig
+-setSeq  _S|> strSeq(_A,_B) _A|> __string(_) _B|> strSeq(_L) --- setSeq(_S),_sig -> setSeq(strSeq(__cat(_A,_L))),_sig
+-setSeq  _S|> strSeq(_A) _A|> __string(_) --- setSeq(_S),_sig -> setSeq(_A),_sig
+-setSeq  _S|> __string(_) _A|> __string(_) _B|> __string(_) --- setSeq(_S),_sig -> __cat(_A,_B),_sig
+
+
+//-strSeq  _A|> __string(_) _B|> strSeq(_L,_R) --- strSeq(_A,_B),_sig -> strSeq(__cat(_A,_L),_R), _sig
+//-strSeq  _A|> __string(_) _B|> __string(_) --- strSeq(_A,_B),_sig -> __cat(_A,_B), _sig
+
+
+
 
 -bpm _A |> __int32(_) --- bpm(_A),_sig -> __plugin("bpm",_A),_sig
+
+-octave _A |> __int32(_) --- octave(_A),_sig -> __plugin("octave",_A),_sig
+
+-channel _A |> __int32(_) --- channel(_A),_sig -> __plugin("channel",_A),_sig
+
+-start  --- start(_),_sig -> __plugin("start"),_sig
 
 -instrument _A |> __string(_) --- instrument(_A),_sig -> __plugin("instrument",_A),_sig
 
@@ -105,16 +118,23 @@
 
 seq ::= statement^^ | statement seq
 
-statement ::= assign^^ | while^^ | if^^ | plugin^^ ';'^ | play^^ ';'^ | bpm^^ ';'^ | instrument^^ ';'^
+statement ::= assign^^ | while^^ | if^^ | plugin^^ ';'^ | play^^ ';'^ | bpm^^ ';'^ | instrument^^ ';'^ | setSeq^^ ';'^ | start^^ ';'^| octave^^ ';'^| channel^^ ';'^
 assign ::= &ID ':='^ expression ';'^
 while ::= 'while'^ expression 'do'^ statement
 if ::= 'if'^ expression 'then'^ statement | 'if'^ expression 'then'^ statement 'else'^ statement
 plugin ::= 'plugin'^ '('^ expressions^ ')'^  
 play ::= 'play'^ __string ','^ __string ','^ __string
+start ::= 'start'
 
 //play ::= 'play'^ strSeq
 
+setSeq ::= 'setSeq'^ strSeq
+
 instrument ::= 'instrument'^ __string
+
+octave ::= 'octave'^ __int32
+
+channel ::= 'channel'^ __int32
 
 bpm ::= 'bpm'^ __int32
 expressions ::= expression | expression ','^ expressions^
@@ -133,13 +153,13 @@ adds  ::= operand^^ | add^^ | sub^^ | mul^^ | div^^ | mod^^ | exp^^
   div ::= adds '/'^ operand
   mod ::= adds '%'^ operand
   exp ::= adds '^'^ operand
-operand ::= __real64^^ | deref^^ | __string^^ | plugin^^ | __int32^^
+operand ::= __real64^^ | deref^^ | __string^^ | plugin^^ | __int32^^ | strSeq^^
 __real64 ::= &REAL
 deref   ::= &ID
 __string::= &STRING_SQ
 __int32 ::= &INTEGER
 
-strSeq ::= operand^^ | operand ','^ strSeq
+strSeq ::= __string ','^ strSeq | __string
 
 (* GCD examples *)
 //!try seq(assign(a,6), seq(assign(b,9), while(ne(deref(a), deref(b)), if(gt(deref(a), deref(b)), assign(a, sub(deref(a), deref(b))), assign(b, sub(deref(b), deref(a))))))), __map
@@ -150,9 +170,10 @@ strSeq ::= operand^^ | operand ','^ strSeq
 
 //!try "plugin('init'); plugin('play', 'A', 'D', 'B');"
 
-!try "plugin('init'); bpm 100; instrument 'guitar'; play 'C', 'C', 'C'; instrument 'piano'; play 'C', 'C', 'C';"
+//!try "plugin('init'); bpm 100; instrument 'guitar'; play 'C', 'C', 'C'; instrument 'piano'; play 'C', 'C', 'C';"
 
-
+//!try strSeq("a", strSeq("a","b")),_map
+!try "plugin('init');channel 1; setSeq 'A','b','c'; octave 1; setSeq 'a','b','c'; channel 2; octave 5; setSeq 'a','d','c','e','f'; start;"
 
 //!try "plugin('init'); play 'B', 'A', 'D'; bpm 300; play 'B', 'A', 'D'; play 'c', 'A', 'G';"
  

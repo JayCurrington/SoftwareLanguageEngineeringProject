@@ -50,6 +50,40 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       }
       break;
 
+    case "setSeq":
+      System.out.println("sequence: " + args[1].getClass());
+      String sequence = (String)args[1];
+
+      for (int i =0; i<sequence.length(); i++){
+        channelNotes[currentChannel+1].add(noteNameToMidiKey((""+sequence.charAt(i)), defaultOctave));
+      }
+      
+      break;
+
+    case "start":
+      /*
+      int longestCount = 0;
+      for(int i=0; i<4; i++){
+        if(longestCount < channelNotes[i].size())
+          //System.out.println(channelNotes[i].size());
+          longestCount = channelNotes[i].size();
+      }
+
+      for(int i=0; i<longestCount; i++){
+        for(int j=0; j<4; j++){
+          if (channelNotes[j].size() > i)
+            play(channelNotes[j].get(i));
+          
+        }
+      }
+        for(int i=0; i<4; i++){
+          playListSequentially(channelNotes[i]);
+        }*/
+
+          playAllSequentially();
+      break;
+
+
     case "bpm":
       setBpm((int)args[1]);
       System.out.println("BPM is "+ getBpm());
@@ -65,37 +99,38 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       switch ((String)args[1]){
         case "piano":
           instNum = 2;
-          break;
+ 
 
         case "guitar":
           instNum = 25;
-          break;
+ 
 
         case "elecGuitar":
           instNum = 28;
-          break;
+        
 
         case "drums":
           instNum = 118;
-          break;
+       
 
         case "bass":
           instNum = 34;
-          break;
+         
 
         case "trumpet":
           instNum = 57;
-          break;
+         
 
         case "ocarina":
           instNum = 80;
-          break;
+      
 
         case "violin":
           instNum = 41;
-          break;
+          
         default:
           instNum = 1;
+
         
       }
       channels[currentChannel].programChange(instNum);
@@ -107,7 +142,7 @@ public class ARTValuePlugin extends AbstractValuePlugin {
 
       break;
 
-    case "channelChange":
+    case "channel":
       currentChannel = (int)args[1];
       break;
     
@@ -134,7 +169,7 @@ public class ARTValuePlugin extends AbstractValuePlugin {
 
   //channels 1-4
   
-  ArrayList[] channelNotes = {new ArrayList<String>(), new ArrayList<String>(), new ArrayList<String>(), new ArrayList<String>()};
+  ArrayList[] channelNotes = {new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>()};
   private int currentChannel = 1;
 
 
@@ -258,6 +293,9 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       /* ignore interruptedException */ }
   }
 
+
+  
+
   private void playSequentially(int[] k) {
     try {
       for (int i = 0; i < k.length; i++) {
@@ -265,6 +303,34 @@ public class ARTValuePlugin extends AbstractValuePlugin {
         Thread.sleep(beatSoundDelay);
         channels[i].noteOn(k[i], 0);
         Thread.sleep(beatSilenceDelay);
+      }
+    } catch (InterruptedException e) {
+      /* ignore interruptedException */ }
+  }
+
+
+  private void playAllSequentially() {
+    int longestCount = 0;
+      for(int i=0; i<4; i++){
+        if(longestCount < channelNotes[i].size())
+          //System.out.println(channelNotes[i].size());
+          longestCount = channelNotes[i].size();
+      }
+
+    try {
+      for (int i = 0; i < longestCount; i++) {
+        for (int j = 0; j<4; j++){
+          if (channelNotes[j].size() > i){
+            channels[j+1].noteOn(Integer.parseInt(channelNotes[j].get(i).toString()), defaultVelocity);
+          }
+        }
+        Thread.sleep(beatSoundDelay);
+        for (int j = 0; j<4; j++){
+          if (channelNotes[j].size() > i){
+            channels[j+1].noteOn(Integer.parseInt(channelNotes[j].get(i).toString()), 0);
+          }
+        }
+        Thread.sleep(beatSoundDelay);
       }
     } catch (InterruptedException e) {
       /* ignore interruptedException */ }
