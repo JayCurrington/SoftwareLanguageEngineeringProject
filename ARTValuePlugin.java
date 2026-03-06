@@ -12,9 +12,14 @@ import java.util.ArrayList;
 import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Instrument;
+import javax.sound.midi.Soundbank;
 
 import uk.ac.rhul.cs.csle.art.term.AbstractValuePlugin;
 import uk.ac.rhul.cs.csle.art.util.Util;
+import javax.sound.midi.Instrument;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.MidiEvent;
 
 
 public class ARTValuePlugin extends AbstractValuePlugin {
@@ -32,118 +37,126 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       initialise();
       break;
 
+      //plays a chord
     case "play":
-      channels[0].noteOn(72,60);
-      for (int i = 1; i < args.length; i++){
-        playChord((String) args[i], Chord.MINOR7);
-        
-        
-        
-        //String argsHold = (String)args[i];
-        //for (int j=0; j<argsHold.length(); j++){
-        //  System.out.println("Next Note is "+ argsHold.charAt(j));
-        //  playChord(argsHold.charAt(j), Chord.MINOR7);
-        //}
-          
+        System.out.println((String) args[1]);
+        if (!(((String)args[1])).equals("X")){
+          playChord((String)args[1], defaultOctave, chordType);}
+        else
+          rest(1);
 
-        
-      }
+      
       break;
 
+      //adds one note at a time to the note store for the current channel
+    case "seqAdd":
+      System.out.println("ADD TO SEQUENCE HERE " + (String) args[1] +" ---------------------------------------------------------------");
+      if (!(((String)args[1]).equals("X"))){
+          channelNotes[currentChannel].add(noteNameToMidiKey(((String)args[1]), defaultOctave));}
+        else
+          channelNotes[currentChannel].add(-1);
+
+      break;
+
+      //sets a note sequence in selected channel by parsing through a string
+      //was replaced by seqAdd which adds per individual character.
     case "setSeq":
-      System.out.println("sequence: " + args[1].getClass());
+      System.out.println("sequence: " + args[1]);
       String sequence = (String)args[1];
 
       for (int i =0; i<sequence.length(); i++){
-        channelNotes[currentChannel+1].add(noteNameToMidiKey((""+sequence.charAt(i)), defaultOctave));
+        if (!(""+sequence.charAt(i)).equals("X")){
+          System.out.println((""+sequence.charAt(i)));
+          channelNotes[currentChannel].add(noteNameToMidiKey((""+sequence.charAt(i)), defaultOctave));}
+        else
+          channelNotes[currentChannel].add(-1);
       }
       
       break;
 
+      //plays all notes stored in each channel's note store simultaniously.
     case "start":
-      /*
-      int longestCount = 0;
-      for(int i=0; i<4; i++){
-        if(longestCount < channelNotes[i].size())
-          //System.out.println(channelNotes[i].size());
-          longestCount = channelNotes[i].size();
-      }
-
-      for(int i=0; i<longestCount; i++){
-        for(int j=0; j<4; j++){
-          if (channelNotes[j].size() > i)
-            play(channelNotes[j].get(i));
-          
-        }
-      }
-        for(int i=0; i<4; i++){
-          playListSequentially(channelNotes[i]);
-        }*/
 
           playAllSequentially();
       break;
 
 
+      //sets bpm
     case "bpm":
       setBpm((int)args[1]);
       System.out.println("BPM is "+ getBpm());
       break;
 
+      //sets default octave
     case "octave":
       setDefaultOctave((int)args[1]);
       break;
 
+      //sets instrument played (only works in channels not in play chords)
     case "instrument":
       System.out.println(args[1]);
       int instNum;
+      Instrument[] instr = synthesizer.getDefaultSoundbank().getInstruments();
+      
+
       switch ((String)args[1]){
         case "piano":
           instNum = 2;
+          break;
  
 
         case "guitar":
           instNum = 25;
+          break;
  
 
         case "elecGuitar":
           instNum = 28;
+          break;
         
 
         case "drums":
           instNum = 118;
+          break;
        
 
         case "bass":
           instNum = 34;
+          break;
          
 
         case "trumpet":
           instNum = 57;
+          break;
          
 
         case "ocarina":
           instNum = 80;
+          break;
       
 
         case "violin":
-          instNum = 41;
+          instNum = 40;
+          break;
           
         default:
           instNum = 1;
 
         
       }
-      channels[currentChannel].programChange(instNum);
-      break;
-
-    
-    case "prepare":
-
+      channelInst[currentChannel] = instNum;
+      boolean hold = synthesizer.loadInstrument(instr[instNum]);
 
       break;
-
+      
+      // sets what channel is being worked in
     case "channel":
       currentChannel = (int)args[1];
+      break;
+
+      //sets chord type
+    case "chord":
+      setChord((String) args[1]);
       break;
     
 
@@ -165,11 +178,13 @@ public class ARTValuePlugin extends AbstractValuePlugin {
   private double beatRatio = 0.9;
   private int beatSoundDelay = (int) (1000.0 * beatRatio / bps);
   private int beatSilenceDelay = (int) (1000.0 * (1.0 - beatRatio) / bps);
+  private Chord chordType = Chord.MAJOR;
 
 
   //channels 1-4
   
   ArrayList[] channelNotes = {new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>()};
+  int[] channelInst = {1,1,1,1};
   private int currentChannel = 1;
 
 
@@ -179,6 +194,8 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       synthesizer = MidiSystem.getSynthesizer();
       synthesizer.open();
       channels = synthesizer.getChannels();
+      
+
     } catch (Exception e) {
       Util.fatal("Java MIDI exception: " + e.getMessage());
     }
@@ -308,8 +325,9 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       /* ignore interruptedException */ }
   }
 
-
+//plays all notes stored for channels 0-3
   private void playAllSequentially() {
+    //find longest channel so that all notes get played.
     int longestCount = 0;
       for(int i=0; i<4; i++){
         if(longestCount < channelNotes[i].size())
@@ -318,16 +336,25 @@ public class ARTValuePlugin extends AbstractValuePlugin {
       }
 
     try {
+      //plays beat by beat
       for (int i = 0; i < longestCount; i++) {
         for (int j = 0; j<4; j++){
+          //checks note needs to be played
           if (channelNotes[j].size() > i){
-            channels[j+1].noteOn(Integer.parseInt(channelNotes[j].get(i).toString()), defaultVelocity);
+            if (Integer.parseInt(channelNotes[j].get(i).toString()) != -1){
+              System.out.println(Integer.parseInt(channelNotes[j].get(i).toString()));
+              //set instrument
+              channels[j].programChange(0, channelInst[j]);
+              //play note
+              channels[j].noteOn(Integer.parseInt(channelNotes[j].get(i).toString()), defaultVelocity);
+            }
           }
         }
         Thread.sleep(beatSoundDelay);
         for (int j = 0; j<4; j++){
           if (channelNotes[j].size() > i){
-            channels[j+1].noteOn(Integer.parseInt(channelNotes[j].get(i).toString()), 0);
+            //turn off note after one beat
+            channels[j].noteOn(Integer.parseInt(channelNotes[j].get(i).toString()), 0);
           }
         }
         Thread.sleep(beatSoundDelay);
@@ -441,6 +468,27 @@ public class ARTValuePlugin extends AbstractValuePlugin {
     playChord(base + 2, Chord.MINOR);
   }
 
+  //gets the chord from the string
+  void setChord (String strChord){
+    switch (strChord) {
+      case "Major":
+        chordType = Chord.MAJOR;
+        break;
+      case "Major7":
+        chordType = Chord.MAJOR7;
+        break;
+      case "Minor":
+        chordType = Chord.MINOR;
+        break;
+      case "Minor7":
+        chordType = Chord.MINOR7;
+        break;
+    
+      default:
+        chordType = Chord.MAJOR;
+        break;
+    }
+  }
   void close() {
     rest(3);
     synthesizer.close();
